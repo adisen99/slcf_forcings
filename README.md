@@ -98,6 +98,19 @@ The gridded data are large (currently about 47 GB), so raw downloads should not
 be committed to version control. Preserve the download script and record the
 dataset source ID, version, checksum, access date, and any processing choices.
 
+### Git tracking and local-only data policy
+
+This repository deliberately excludes the raw NetCDF archives, the local working
+`data/` tree, and generated analysis outputs from Git tracking. The project
+keeps the data and derived files on disk locally for reproducible analysis while
+keeping the repository lightweight and safe to push remotely.
+
+This is enforced via the repository `.gitignore` file, which ignores the local
+archive folders, downloaded NetCDF files, and the generated `output/` and
+`plots/` products. The scripts and notebooks remain version-controlled so the
+workflow is still fully reproducible, but the actual large input files are
+treated as local working data rather than code artefacts.
+
 ### Downloading the production CEDS data
 
 Use `scripts/download_ceds_gn.sh`, not the generated ESGF scripts directly.
