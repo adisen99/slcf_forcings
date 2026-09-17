@@ -1,0 +1,21 @@
+name: forcings_eval_cmip7
+channels:
+  - conda-forge
+dependencies:
+  - esgpull
+  - numpy
+  - scipy
+  - pandas
+  - xarray
+  - matplotlib
+  - netcdf4
+  - cartopy
+  - jupyter
+  - ca-certificates
+  - certifi
+  - openssl
+  - fair
+  - dask
+  - seaborn
+  - ipykernel
+prefix: /Users/assengu/.miniforge3/envs/forcings_eval_cmip7

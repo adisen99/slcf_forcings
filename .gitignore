@@ -216,3 +216,30 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project-specific data and generated files
+# Large local datasets are kept out of git history.
+data/
+!data/README*
+!data/**/download_manifest_gn.tsv
+!data/**/wget_script_*.sh
+
+# Cache and derived output files
+output/
+plots/
+*.nc
+*.nc4
+*.grib
+*.csv
+!output/README*
+
+# Local environment and project metadata
+.mamba/
+.conda/
+.python-version
+
+# Common temporary/project artifacts
+*.tmp
+*.temp
+*.bak
+.DS_Store
