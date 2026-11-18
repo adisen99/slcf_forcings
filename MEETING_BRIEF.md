@@ -1,111 +1,124 @@
-# CMIP7 SLCF evaluation: meeting brief
+# CMIP7 SLCF forcings evaluation — Phase 1 findings
 
-## 1. Overall plan
+**Date:** 2026-11-19
+**Status:** Phase 0 complete; Phase 1 global and sectoral comparison complete;
+spatial comparison not started.
 
-This project is a historical emissions-and-response evaluation built around the CMIP7 CEDS dataset.
+## Summary
 
-The working plan is:
+CEDS emissions have changed substantially between CMIP6 (`CEDS-2017-05-18`) and
+CMIP7 (`CEDS-CMIP-2025-04-18`). Carbonaceous aerosol is revised sharply
+downward in the modern era and upward in the 19th century; the waste sector is
+roughly halved across all species; CO2 is essentially unchanged. Comparable
+window is 1750–2014, bounded by the CMIP6 release.
 
-1. Start from the archived old CEDS release and build a reproducible baseline.
-2. QA the archive and compute annual global totals and trend summaries.
-3. Move to the production CMIP7 CEDS release and compare with the archived baseline.
-4. Compare the resulting emissions against independent inventories and observations.
-5. Convert the agreed emissions series into FaIR inputs and evaluate historical forcing, concentration, and temperature response.
-6. Use counterfactual experiments to attribute the climate response to key species and sectors.
+## Data and method
 
-The scope is intentionally focused on a global, emissions-to-climate evaluation rather than a regional chemistry or ESM project.
+All data read from the NCI qv56 input4MIPs replica — nothing downloaded.
 
-## 2. Where we are now
+| Release | Source id | Grid | Version | Coverage |
+|---|---|---|---|---|
+| CMIP6 | `CEDS-2017-05-18` | gn | — | 1750–2014 |
+| Pre-production | `CEDS-CMIP-2024-11-25` | gn | — | 1750–2022, no NMVOC |
+| March | `CEDS-CMIP-2025-03-18` | gn | v20250325 + v20250327 | 1750–2023 |
+| **Production** | `CEDS-CMIP-2025-04-18` | gn | v20250421 | 1750–2023 |
 
-We are currently in the Phase 0 baseline-validation stage.
+Area-weighted integration from kg m-2 s-1 to Tg yr-1 using the supplied
+`areacella`, with CF-calendar-aware month lengths. CEDS-2017 ships no
+`areacella`; cell areas are computed from its `lat_bnds`/`lon_bnds`, exact on a
+regular lat-lon grid.
 
-Key status points:
+**Validation.** The pipeline reproduces three independently derived values from
+an earlier local run to the cent: SO2 2000 = 107.19 Tg, BC 2000 = 5.47 Tg,
+CO2 2000 = 25083.94 Tg.
 
-- The archived CEDS files in `data/SLCF_main/old/` are the working reference dataset.
-- The repo is already set up as a notebook-first analysis workflow with reusable logic in `src/slcf_forcings/ceds.py`.
-- The archive has been checked for file readability, dimensions, and aggregate behaviour.
-- A working 2000–2023 subset has been established for the main annual-global comparisons.
-- The derived outputs used repeatedly in downstream analysis are stored in `output/preliminary/`.
-- The next step is to replace the archived reference with the production CMIP7 CEDS release and compare the differences.
+**Sector definitions are identical** across CMIP6, the November pre-production
+and both 2025 releases — all eight sectors match index for index. Sectoral
+comparison is therefore valid.
 
-Project current working emphasis:
-- `00_old_ceds_baseline_overview.ipynb` — archive overview and broad historical context.
-- `01_old_ceds_qa_pipeline.ipynb` — QA, audit, and aggregation checks.
-- `src/slcf_forcings/ceds.py` — shared helper functions.
+## Findings
 
-## 3. Next steps
+### 1. Carbonaceous aerosol: one revision, sign flip mid-century
 
-### Near-term milestones
+BC and OC are higher in CMIP7 through the 19th century, peaking around +32% and
++26% in the 1850s, declining smoothly through zero at approximately 1950 (OC)
+and 1960 (BC), and reaching −26% and −33% by 2014.
 
-1. Production release check
-   - Download and validate the newer CMIP7 CEDS collection.
-   - Compare it with the archived baseline.
-   - Document deltas in species totals, timing, and sector structure.
+The signal is in **Residential/Commercial** in every period (+32/+26% in
+1840–60, +24/+22% in 1890–1910, −25/−23% in 2005–14), consistent with a single
+revision to residential solid-fuel emission factors rather than two independent
+changes. The transition is smooth, indicating a revised time-varying factor
+rather than a discontinuity.
 
-2. Standardised emissions pipeline
-   - Finalise path handling, species naming, sector labels, unit conversion, and missing-value handling.
-   - Create a clean, reproducible pipeline for annual totals and trend diagnostics.
+**Implication for FaIR (Phase 4):** a materially different aerosol forcing
+trajectory, with more early and less recent carbonaceous aerosol.
 
-3. Independent comparison stage
-   - Add EDGAR and Global Carbon Project CO2 comparisons.
-   - Add a biomass-burning or other supplemental check where relevant.
-   - Identify which independent datasets are strongest for each species.
+### 2. Waste sector roughly halved across all species
 
-4. FaIR implementation
-   - Convert the final emissions series to FaIR species inputs.
-   - Add historical forcing configuration and observational comparisons.
-   - Run initial ensemble simulations and document the response.
+Post-1950, waste emissions fall by 56–64% for every species simultaneously
+(2014: CO 40.3 → 17.1 Tg, CO2 129 → 49 Tg, NMVOC 7.3 → 2.7 Tg). The curves are
+parallel with a constant offset.
 
-## 4. How we can collaborate and divide tasks
+A uniform multi-species change of this size is a methodology change, almost
+certainly in open-burning treatment. **Action: check against the CEDS CMIP7
+release notes.**
 
-A good working structure is to split responsibilities by analysis layer while keeping the notebooks as the shared record of the scientific decisions.
+### 3. Substantial inter-sector reallocation
 
-### Suggested workstreams
+Sectoral changes exceed global changes for several species: Energy OC −52%
+against global OC −29%; Energy NMVOC −44% against global −22%. Roughly half of
+these sectoral signals are redistribution between sectors, not net change.
 
-#### A. Emissions QA and baseline comparison
-- Archive check, inventory validation, and file-level QA.
-- Production-release comparison against the old baseline.
-- Unit and sector consistency checks.
-- Output tables for annual global totals and trend summaries.
+**Energy and Industrial move in opposite directions in every period** (Industrial
+BC +11/+42/+11% while Energy BC −10/−2/−27%). This reciprocity across 160 years
+indicates a sector-boundary definition difference. **Recommendation: report
+Energy and Industrial combined**, as the split is not comparable between
+releases.
 
-#### B. Independent inventory benchmarking
-- Gather and harmonise EDGAR, GCP, and other external datasets.
-- Compare trends, ratios, and sector structure.
-- Summarise agreement and disagreement in a consistent, reviewable table.
+### 4. SO2 declines later than the other species
 
-#### C. FaIR forcing and climate response
-- Convert annual emissions to FaIR inputs.
-- Select and prepare observed concentration and temperature datasets.
-- Run historical ensembles and compare to observational records.
-- Diagnose response in terms of all-forcing, aerosol, and sector attribution.
+SO2 is near zero through 2007 then falls to −14.3% by 2014 — a later onset than
+BC, OC, CO and NOx. Timing is consistent with better representation of Chinese
+flue-gas desulfurisation, which scaled up from ~2006.
 
-#### D. Documentation and reproducibility
-- Maintain README and meeting notes.
-- Ensure notebooks remain transparent and easy to rerun.
-- Keep derived intermediate outputs organised and documented.
+### 5. CO2 essentially unchanged
 
-### Collaboration model
+Within ±10% across the full record and near zero after 1950, as expected for
+the best-constrained species. Serves as a sanity check on the comparison.
 
-- Use the notebooks as the main science ledger: figures, checks, and interpretation live there.
-- Put reusable processing in `src/slcf_forcings/ceds.py` or scripts.
-- Keep the outputs in `output/preliminary/` for repeated analysis.
-- Agree on a short set of shared data products to compare across teams:
-  - annual global totals by species
-  - normalized trend plots
-  - sectoral shares
-  - compatibility checks against external inventories
+### 6. NH3 uniformly negative
 
-### Good handoff pattern
+−5 to −9% across the entire 1750–2014 record with no sign change, unlike every
+other species. Suggests a uniform baseline or emission-factor change. Not yet
+explained.
 
-Each collaborator can take ownership of one clearly bounded domain, while all outputs feed into the same baseline tables. For example:
+## Caveats
 
-- Person 1: archive QA and production comparison
-- Person 2: external inventory benchmarking
-- Person 3: FaIR setup and historical response runs
-- Shared: figures, outputs, and interpretation in notebooks
+- Percentage differences on small bases produce ratio artefacts. Sectoral
+  tables are screened to cells exceeding 1% of the global total and 0.01 Tg
+  **in both releases**; historical periods are better read in absolute terms.
+- CH4 and N2O are excluded: main-stream coverage begins in 1970 and requires
+  the supplemental stream.
+- `CEDS-CMIP-2024-10-21` is an AIR-only partial publication and is excluded.
+- Global totals only; no regional attribution yet.
 
-This keeps progress parallel without fragmenting the project.
+## Open questions
 
-## 5. One-sentence objective for the meeting
+1. Does the CEDS CMIP7 documentation explain the waste-sector revision?
+2. Is Intl Shipping CO2 at 785 Tg (2014) consistent with IMO estimates? It
+   appears high.
+3. What drives the uniform NH3 offset?
+4. Where is the Residential/Commercial BC/OC change concentrated regionally?
 
-The project is to establish a transparent, reproducible historical SLCF emissions baseline, compare the archived and production CEDS releases, and then convert the validated emissions record into a defensible FaIR-based historical climate evaluation.
+## Next steps
+
+**Phase 1 completion**
+- [ ] Spatial differences for BC/OC Residential/Commercial, 1850 and 2010
+- [ ] March vs April gridding-issue test (CO, CO2, NOx, 1961–2021) as a
+      known-answer validation of the spatial diagnostic
+- [ ] Regional decomposition — China, India, Europe, North America
+- [ ] Extend to CH4 and N2O using the supplemental stream
+
+**Phase 2**
+- [ ] EDGAR and Global Carbon Project comparison
+- [ ] BB4CMIP7 for open biomass burning (already on qv56)

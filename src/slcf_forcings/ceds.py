@@ -153,6 +153,7 @@ def select_files(
     recursive: bool = True,
     grid_label: str | None = "gn",
     version: str | None = None,
+    allow_multiple_versions: bool = False,
 ) -> list[Path]:
     """Select files for ``species`` whose time chunk overlaps ``year_range``.
 
@@ -180,8 +181,15 @@ def select_files(
                 f"No files covering {first}-{last} for: {sorted(missing)} "
                 f"in {data_dir}"
             )
-    if selected:
+
+    if selected and not allow_multiple_versions:
         assert_single_realisation(selected)
+    elif selected:
+        # Grid mixing is never acceptable, even when versions legitimately differ.
+        grids = {drs_fields(p)["grid_label"] for p in selected} - {None}
+        if len(grids) > 1:
+            raise ValueError(f"Mixed grid labels: {sorted(grids)}")
+
     return sorted(selected)
 
 
@@ -337,11 +345,18 @@ def check_source_consistency(audit: pd.DataFrame) -> pd.DataFrame:
     return ok[ok["source_id"] != ok["source_id_filename"]]
 
 
+
 def check_time_coverage(audit: pd.DataFrame) -> pd.DataFrame:
     """Return rows whose month count disagrees with the filename's chunk span."""
-    ok = audit[audit["readable"].fillna(False).astype(bool)].copy()
-    expected = (ok["chunk_last_year"] - ok["chunk_first_year"] + 1) * 12
-    return ok[ok["time_size"] != expected].assign(expected_months=expected)
+    ok = audit[audit["readable"].fillna(False).astype(bool)].copy().reset_index(drop=True)
+    if ok.empty:
+        return ok.assign(expected_months=pd.Series(dtype="float64"))
+    expected = (
+        ok["chunk_last_year"].to_numpy() - ok["chunk_first_year"].to_numpy() + 1
+    ) * 12
+    ok["expected_months"] = expected
+    return ok[ok["time_size"].to_numpy() != expected]
+
 
 
 def check_single_realisation(audit: pd.DataFrame) -> pd.DataFrame:
@@ -525,6 +540,7 @@ def annual_global_totals(
     cell_area: xr.DataArray,
     year_range: tuple[int, int] | None = None,
     chunks: dict | None = None,
+    allow_multiple_versions: bool = False,
 ) -> pd.DataFrame:
     """Integrate kg m-2 s-1 emissions to annual Tg yr-1, preserving sector.
 
@@ -539,7 +555,7 @@ def annual_global_totals(
     """
     results: list[pd.DataFrame] = []
     file_list = list(map(Path, file_paths))
-    if file_list:
+    if file_list and not allow_multiple_versions:
         assert_single_realisation(file_list)
 
     for path in tqdm(file_list, desc="Aggregating", unit="file"):
@@ -601,3 +617,26 @@ def annual_global_totals(
             results.append(table.drop(columns="time"))
 
     return pd.concat(results, ignore_index=True) if results else pd.DataFrame()
+
+
+
+def cell_area_from_grid(path: str | Path) -> xr.DataArray:
+    """Compute grid-cell area (m2) from a file's own lat/lon bounds.
+
+    CEDS-2017 (CMIP6) ships no areacella file, but does carry lat_bnds and
+    lon_bnds, from which cell area is exact on a regular lat-lon grid.
+    """
+    R = 6_371_000.0
+    with xr.open_dataset(path, decode_times=False) as ds:
+        lat, lon = ds["lat"], ds["lon"]
+        lat_b = np.deg2rad(ds["lat_bnds"].values)
+        lon_b = np.deg2rad(ds["lon_bnds"].values)
+        dlon = np.abs(lon_b[:, 1] - lon_b[:, 0])
+        sin_diff = np.abs(np.sin(lat_b[:, 1]) - np.sin(lat_b[:, 0]))
+        area = (R ** 2) * sin_diff[:, None] * dlon[None, :]
+        return xr.DataArray(
+            area, dims=("lat", "lon"),
+            coords={"lat": lat.values, "lon": lon.values},
+            name="areacella",
+            attrs={"units": "m2", "source": "computed from lat/lon bounds"},
+        )

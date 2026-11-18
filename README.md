@@ -79,10 +79,10 @@ the product rather than raise.
 
 | Location | Contents |
 |---|---|
-| `notebooks/00_qv56_data_discovery.ipynb` | What is available on qv56 and whether it is sufficient |
-| `notebooks/01_ceds_inventory_qa.ipynb` | Integrity audit and provenance manifest |
-| `notebooks/02_release_timeseries.ipynb` | Annual totals across CEDS releases |
-| `notebooks/03_release_spatial.ipynb` | Gridded differences where totals diverge |
+| `00_qv56_data_discovery.ipynb` | What is available on qv56 and whether it is sufficient |
+| `01_ceds_inventory_qa.ipynb` | Integrity audit and provenance manifest |
+| `02_release_timeseries.ipynb` | Annual totals across CEDS releases |
+| `03_release_spatial.ipynb` | Gridded differences where totals diverge |
 | `src/slcf_forcings/paths.py` | Pinned dataset locations |
 | `src/slcf_forcings/ceds.py` | Discovery, audit, manifest, area-weighted aggregation |
 | `src/slcf_forcings/compare.py` | Release intercomparison |
